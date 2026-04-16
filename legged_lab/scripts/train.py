@@ -34,11 +34,13 @@ args_cli, hydra_args = parser.parse_known_args()
 # launch omniverse app
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
+import importlib.metadata as metadata
 import os
 from datetime import datetime
 
 import torch
 from isaaclab.utils.io import dump_yaml
+from isaaclab_rl.rsl_rl import handle_deprecated_rsl_rl_cfg
 from isaaclab_tasks.utils import get_checkpoint_path
 
 from legged_lab.envs import *  # noqa:F401, F403
@@ -61,6 +63,8 @@ def train():
         env_cfg.scene.num_envs = args_cli.num_envs
 
     agent_cfg = update_rsl_rl_cfg(agent_cfg, args_cli)
+    installed_version = metadata.version("rsl-rl-lib")
+    agent_cfg = handle_deprecated_rsl_rl_cfg(agent_cfg, installed_version)
     env_cfg.scene.seed = agent_cfg.seed
 
     if args_cli.distributed:

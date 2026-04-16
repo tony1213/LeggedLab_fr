@@ -161,3 +161,19 @@ class G1RoughAgentCfg(BaseAgentCfg):
         self.policy.rnn_hidden_size = 256
         self.policy.rnn_num_layers = 1
         self.policy.rnn_type = "lstm"
+
+
+@configclass
+class G1PlaneEnvCfg(G1FlatEnvCfg):
+    """G1 训练：纯平面地形（无随机起伏），适合对比基准测试。"""
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.scene.terrain_type = "plane"
+        self.scene.terrain_generator = None
+
+
+@configclass
+class G1PlaneAgentCfg(G1FlatAgentCfg):
+    experiment_name: str = "g1_plane"
+    wandb_project: str = "g1_plane"

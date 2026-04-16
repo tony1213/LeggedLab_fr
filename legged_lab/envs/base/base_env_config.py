@@ -202,6 +202,7 @@ class BaseAgentCfg(RslRlOnPolicyRunnerCfg):
         rnd_cfg=None,  # RslRlRndCfg()
     )
     clip_actions = None
+    obs_groups: dict[str, list[str]] = {"actor": ["actor"], "critic": ["critic"]}
     save_interval = 100
     experiment_name = ""
     run_name = ""

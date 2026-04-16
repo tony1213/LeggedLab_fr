@@ -10,6 +10,7 @@
 # with modifications by Legged Lab Project (BSD-3-Clause license).
 
 import argparse
+import importlib.metadata as metadata
 import os
 
 import torch
@@ -26,6 +27,12 @@ parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
 parser.add_argument("--task", type=str, default=None, help="Name of the task.")
 parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
+parser.add_argument(
+    "--train_terrain",
+    action="store_true",
+    default=False,
+    help="Use the same procedural terrain as training (e.g. gravel). Default is a flat plane for visualization.",
+)
 
 # append RSL-RL cli arguments
 cli_args.add_rsl_rl_args(parser)
@@ -37,7 +44,7 @@ args_cli, hydra_args = parser.parse_known_args()
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
-from isaaclab_rl.rsl_rl import export_policy_as_jit, export_policy_as_onnx
+from isaaclab_rl.rsl_rl import handle_deprecated_rsl_rl_cfg
 from isaaclab_tasks.utils import get_checkpoint_path
 
 from legged_lab.envs import *  # noqa:F401, F403
@@ -61,8 +68,9 @@ def play():
     env_cfg.commands.ranges.heading = (0.0, 0.0)
     env_cfg.scene.height_scanner.drift_range = (0.0, 0.0)
 
-    # env_cfg.scene.terrain_generator = None
-    # env_cfg.scene.terrain_type = "plane"
+    if not args_cli.train_terrain:
+        env_cfg.scene.terrain_generator = None
+        env_cfg.scene.terrain_type = "plane"
 
     if env_cfg.scene.terrain_generator is not None:
         env_cfg.scene.terrain_generator.num_rows = 5
@@ -74,6 +82,8 @@ def play():
         env_cfg.scene.num_envs = args_cli.num_envs
 
     agent_cfg = update_rsl_rl_cfg(agent_cfg, args_cli)
+    installed_version = metadata.version("rsl-rl-lib")
+    agent_cfg = handle_deprecated_rsl_rl_cfg(agent_cfg, installed_version)
     env_cfg.scene.seed = agent_cfg.seed
 
     env_class = task_registry.get_task_class(env_class_name)
@@ -86,22 +96,21 @@ def play():
     log_dir = os.path.dirname(resume_path)
 
     runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
-    runner.load(resume_path, load_optimizer=False)
+    runner.load(resume_path)
 
     policy = runner.get_inference_policy(device=env.device)
 
     export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
-    export_policy_as_jit(runner.alg.policy, runner.obs_normalizer, path=export_model_dir, filename="policy.pt")
-    export_policy_as_onnx(
-        runner.alg.policy, normalizer=runner.obs_normalizer, path=export_model_dir, filename="policy.onnx"
-    )
+    # 使用 rsl_rl OnPolicyRunner 自带导出（与当前 MLP 策略兼容）
+    runner.export_policy_to_jit(export_model_dir, filename="policy.pt")
+    runner.export_policy_to_onnx(export_model_dir, filename="policy.onnx")
 
     if not args_cli.headless:
         from legged_lab.utils.keyboard import Keyboard
 
         keyboard = Keyboard(env)  # noqa:F841
 
-    obs, _ = env.get_observations()
+    obs = env.get_observations()
 
     while simulation_app.is_running():
 

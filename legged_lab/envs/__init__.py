@@ -15,6 +15,8 @@ from legged_lab.envs.base.base_env_config import BaseAgentCfg, BaseEnvCfg
 from legged_lab.envs.g1.g1_config import (
     G1FlatAgentCfg,
     G1FlatEnvCfg,
+    G1PlaneAgentCfg,
+    G1PlaneEnvCfg,
     G1RoughAgentCfg,
     G1RoughEnvCfg,
 )
@@ -36,5 +38,6 @@ task_registry.register("h1_flat", BaseEnv, H1FlatEnvCfg(), H1FlatAgentCfg())
 task_registry.register("h1_rough", BaseEnv, H1RoughEnvCfg(), H1RoughAgentCfg())
 task_registry.register("g1_flat", BaseEnv, G1FlatEnvCfg(), G1FlatAgentCfg())
 task_registry.register("g1_rough", BaseEnv, G1RoughEnvCfg(), G1RoughAgentCfg())
+task_registry.register("g1_plane", BaseEnv, G1PlaneEnvCfg(), G1PlaneAgentCfg())
 task_registry.register("gr2_flat", BaseEnv, GR2FlatEnvCfg(), GR2FlatAgentCfg())
 task_registry.register("gr2_rough", BaseEnv, GR2RoughEnvCfg(), GR2RoughAgentCfg())

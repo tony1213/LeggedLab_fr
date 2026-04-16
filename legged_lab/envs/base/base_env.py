@@ -22,6 +22,7 @@ from isaaclab.sensors import ContactSensor, RayCaster
 from isaaclab.sim import PhysxCfg, SimulationContext
 from isaaclab.utils.buffers import CircularBuffer, DelayBuffer
 from rsl_rl.env import VecEnv
+from tensordict import TensorDict
 
 from legged_lab.envs.base.base_env_config import BaseEnvCfg
 from legged_lab.utils.env_utils.scene import SceneCfg
@@ -244,7 +245,12 @@ class BaseEnv(VecEnv):
         actor_obs, critic_obs = self.compute_observations()
         self.extras["observations"] = {"critic": critic_obs}
 
-        return actor_obs, reward_buf, self.reset_buf, self.extras
+        obs = TensorDict(
+            {"actor": actor_obs, "critic": critic_obs},
+            batch_size=(self.num_envs,),
+            device=self.device,
+        )
+        return obs, reward_buf, self.reset_buf, self.extras
 
     def check_reset(self):
         net_contact_forces = self.contact_sensor.data.net_forces_w_history
@@ -310,7 +316,11 @@ class BaseEnv(VecEnv):
     def get_observations(self):
         actor_obs, critic_obs = self.compute_observations()
         self.extras["observations"] = {"critic": critic_obs}
-        return actor_obs, self.extras
+        return TensorDict(
+            {"actor": actor_obs, "critic": critic_obs},
+            batch_size=(self.num_envs,),
+            device=self.device,
+        )
 
     @staticmethod
     def seed(seed: int = -1) -> int:
